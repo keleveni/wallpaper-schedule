@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Wallpaper Scheduler</string>
+
+    <string name="nav_schedules">スケジュール</string>
+    <string name="nav_wallpapers">壁紙</string>
+    <string name="nav_settings">設定</string>
+
+    <string name="target_home">ホーム画面</string>
+    <string name="target_lock">ロック画面</string>
+    <string name="target_both">両方</string>
+
+    <string name="action_add">追加</string>
+    <string name="action_save">保存</string>
+    <string name="action_delete">削除</string>
+    <string name="action_cancel">キャンセル</string>
+    <string name="action_apply">適用</string>
+    <string name="action_back">戻る</string>
+    <string name="action_open_settings">設定を開く</string>
+
+    <!-- スケジュール一覧 -->
+    <string name="schedules_title">スケジュール</string>
+    <string name="schedules_empty">スケジュールがありません。\n右下の＋ボタンから追加してください。</string>
+    <string name="schedules_next_change">次回の変更予定</string>
+    <string name="schedules_next_none">予定なし</string>
+    <string name="schedules_next_format">%1$s %2$s</string>
+    <string name="day_today">今日</string>
+    <string name="day_tomorrow">明日</string>
+    <string name="schedules_auto_disabled">自動変更は無効になっています</string>
+    <string name="schedules_exact_alarm_missing">「アラームとリマインダー」が許可されていないため、変更が指定時刻から遅れる場合があります</string>
+    <string name="schedules_delete_title">スケジュールを削除</string>
+    <string name="schedules_delete_message">%1$s のスケジュールを削除しますか？</string>
+    <string name="schedules_add_need_wallpaper">先に「壁紙」タブで画像を登録してください</string>
+
+    <!-- スケジュール編集 -->
+    <string name="schedule_edit_title_new">スケジュールを追加</string>
+    <string name="schedule_edit_title_edit">スケジュールを編集</string>
+    <string name="schedule_edit_time">変更時刻</string>
+    <string name="schedule_edit_target">変更対象</string>
+    <string name="schedule_edit_wallpaper">壁紙</string>
+    <string name="schedule_edit_enabled">有効</string>
+    <string name="schedule_edit_no_wallpapers">壁紙が登録されていません。先に「壁紙」タブで画像を登録してください。</string>
+    <string name="schedule_edit_repeat_note">毎日この時刻に壁紙を変更します</string>
+
+    <!-- 壁紙一覧 -->
+    <string name="wallpapers_title">壁紙</string>
+    <string name="wallpapers_empty">壁紙がありません。\n右下の＋ボタンから端末内の画像を追加してください。</string>
+    <string name="wallpapers_import_failed">画像の読み込みに失敗しました</string>
+    <string name="wallpapers_delete_title">壁紙を削除</string>
+    <string name="wallpapers_delete_message">この壁紙を削除しますか？</string>
+    <string name="wallpapers_delete_message_with_schedules">この壁紙を削除しますか？\nこの壁紙を使用している %1$d 件のスケジュールも削除されます。</string>
+    <string name="wallpapers_apply_title">壁紙を適用</string>
+    <string name="wallpapers_applied">壁紙を適用しました</string>
+    <string name="wallpapers_apply_failed">壁紙の適用に失敗しました</string>
+
+    <!-- 設定 -->
+    <string name="settings_title">設定</string>
+    <string name="settings_auto_change">壁紙の自動変更</string>
+    <string name="settings_auto_change_desc">オフにすると、全てのスケジュールが停止します</string>
+    <string name="settings_permissions">権限の状態</string>
+    <string name="settings_exact_alarm">アラームとリマインダー</string>
+    <string name="settings_exact_alarm_desc">指定した時刻ちょうどに壁紙を変更するために必要です</string>
+    <string name="settings_battery">電池の最適化の対象外</string>
+    <string name="settings_battery_desc">省電力機能による実行の遅延を減らせます（任意）</string>
+    <string name="settings_wallpaper_permission">壁紙の変更</string>
+    <string name="settings_wallpaper_permission_desc">この端末では壁紙の変更が制限されています</string>
+    <string name="status_granted">許可済み</string>
+    <string name="status_denied">未許可</string>
+    <string name="settings_about_delay_title">実行時刻について</string>
+    <string name="settings_about_delay">Android の省電力機能（Doze など）や端末メーカー独自の制限により、壁紙の変更が指定時刻から遅れる場合があります。「アラームとリマインダー」の許可と、電池の最適化の対象外への設定で遅延を減らせます。\n\nまた、一部の端末ではホーム画面のみを変更した場合にロック画面も同じ壁紙に変わることがあります。</string>
+</resources>
