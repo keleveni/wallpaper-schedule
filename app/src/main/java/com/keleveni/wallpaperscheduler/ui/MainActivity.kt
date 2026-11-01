@@ -36,6 +36,7 @@ import com.keleveni.wallpaperscheduler.ui.schedules.ScheduleEditViewModel
 import com.keleveni.wallpaperscheduler.ui.schedules.ScheduleListScreen
 import com.keleveni.wallpaperscheduler.ui.settings.SettingsScreen
 import com.keleveni.wallpaperscheduler.ui.theme.WallpaperSchedulerTheme
+import com.keleveni.wallpaperscheduler.ui.wallpapers.WallpaperCropScreen
 import com.keleveni.wallpaperscheduler.ui.wallpapers.WallpaperListScreen
 import com.keleveni.wallpaperscheduler.ui.wallpapers.WallpaperPreviewScreen
 import kotlinx.coroutines.launch
@@ -66,6 +67,10 @@ private const val ARG_WALLPAPER_ID = "wallpaperId"
 private const val PREVIEW_ROUTE = "wallpaper/{$ARG_WALLPAPER_ID}"
 
 private fun previewRoute(id: Long) = "wallpaper/$id"
+
+private const val CROP_ROUTE = "wallpaper/{$ARG_WALLPAPER_ID}/crop"
+
+private fun cropRoute(id: Long) = "wallpaper/$id/crop"
 
 @Composable
 private fun AppNavigation() {
@@ -127,7 +132,18 @@ private fun AppNavigation() {
                 route = PREVIEW_ROUTE,
                 arguments = listOf(navArgument(ARG_WALLPAPER_ID) { type = NavType.LongType }),
             ) { entry ->
+                val wallpaperId = entry.arguments!!.getLong(ARG_WALLPAPER_ID)
                 WallpaperPreviewScreen(
+                    wallpaperId = wallpaperId,
+                    onClose = { navController.popBackStack() },
+                    onAdjustCrop = { navController.navigate(cropRoute(wallpaperId)) },
+                )
+            }
+            composable(
+                route = CROP_ROUTE,
+                arguments = listOf(navArgument(ARG_WALLPAPER_ID) { type = NavType.LongType }),
+            ) { entry ->
+                WallpaperCropScreen(
                     wallpaperId = entry.arguments!!.getLong(ARG_WALLPAPER_ID),
                     onClose = { navController.popBackStack() },
                 )

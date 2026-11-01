@@ -5,6 +5,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
@@ -28,6 +29,9 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -44,7 +48,9 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.keleveni.wallpaperscheduler.R
+import com.keleveni.wallpaperscheduler.data.Folder
 import com.keleveni.wallpaperscheduler.data.WallpaperEntity
+import com.keleveni.wallpaperscheduler.ui.components.FolderCover
 import com.keleveni.wallpaperscheduler.ui.components.TargetSelector
 import com.keleveni.wallpaperscheduler.ui.components.WallpaperImage
 
@@ -56,6 +62,7 @@ fun ScheduleEditScreen(
 ) {
     val form by viewModel.form.collectAsStateWithLifecycle()
     val wallpapers by viewModel.wallpapers.collectAsStateWithLifecycle()
+    val folders by viewModel.folders.collectAsStateWithLifecycle()
 
     val current = form
     if (current == null) {
@@ -93,7 +100,7 @@ fun ScheduleEditScreen(
                         }
                     }
                     TextButton(
-                        enabled = current.wallpaperId != null,
+                        enabled = current.canSave,
                         onClick = { if (viewModel.save(timeState.hour, timeState.minute)) onClose() },
                     ) { Text(stringResource(R.string.action_save)) }
                 },
@@ -119,7 +126,32 @@ fun ScheduleEditScreen(
             }
 
             Section(stringResource(R.string.schedule_edit_wallpaper)) {
-                if (wallpapers.isEmpty()) {
+                SourceSelector(
+                    useFolder = current.useFolder,
+                    onSelect = viewModel::setUseFolder,
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                )
+                if (current.useFolder) {
+                    if (folders.isEmpty()) {
+                        Text(
+                            stringResource(R.string.schedule_edit_no_folders),
+                            modifier = Modifier.padding(horizontal = 16.dp),
+                        )
+                    } else {
+                        FolderPicker(
+                            folders = folders,
+                            wallpapers = wallpapers,
+                            selectedId = current.folderId,
+                            onSelect = viewModel::selectFolder,
+                        )
+                        Text(
+                            stringResource(R.string.schedule_edit_folder_note),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(horizontal = 16.dp),
+                        )
+                    }
+                } else if (wallpapers.isEmpty()) {
                     Text(
                         stringResource(R.string.schedule_edit_no_wallpapers),
                         modifier = Modifier.padding(horizontal = 16.dp),
@@ -169,6 +201,20 @@ private fun Section(title: String, content: @Composable ColumnScope.() -> Unit) 
 }
 
 @Composable
+private fun SourceSelector(useFolder: Boolean, onSelect: (Boolean) -> Unit, modifier: Modifier = Modifier) {
+    val options = listOf(false to R.string.schedule_edit_source_wallpaper, true to R.string.schedule_edit_source_folder)
+    SingleChoiceSegmentedButtonRow(modifier) {
+        options.forEachIndexed { index, (value, label) ->
+            SegmentedButton(
+                selected = value == useFolder,
+                onClick = { onSelect(value) },
+                shape = SegmentedButtonDefaults.itemShape(index, options.size),
+            ) { Text(stringResource(label)) }
+        }
+    }
+}
+
+@Composable
 private fun WallpaperPicker(
     wallpapers: List<WallpaperEntity>,
     selectedId: Long?,
@@ -179,27 +225,52 @@ private fun WallpaperPicker(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         items(wallpapers, key = { it.id }) { wallpaper ->
-            val selected = wallpaper.id == selectedId
-            val shape = RoundedCornerShape(12.dp)
-            Box(
-                modifier = Modifier
-                    .size(width = 90.dp, height = 160.dp)
-                    .clip(shape)
-                    .then(
-                        if (selected) Modifier.border(BorderStroke(3.dp, MaterialTheme.colorScheme.primary), shape) else Modifier,
-                    )
-                    .clickable { onSelect(wallpaper.id) },
-            ) {
+            PickerItem(selected = wallpaper.id == selectedId, onClick = { onSelect(wallpaper.id) }) {
                 WallpaperImage(wallpaper, Modifier.matchParentSize())
-                if (selected) {
-                    Icon(
-                        Icons.Default.CheckCircle,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.align(Alignment.TopEnd).padding(6.dp),
-                    )
-                }
             }
+        }
+    }
+}
+
+@Composable
+private fun FolderPicker(
+    folders: List<Folder>,
+    wallpapers: List<WallpaperEntity>,
+    selectedId: Long?,
+    onSelect: (Long) -> Unit,
+) {
+    LazyRow(
+        contentPadding = PaddingValues(horizontal = 16.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        items(folders, key = { it.id }) { folder ->
+            PickerItem(selected = folder.id == selectedId, onClick = { onSelect(folder.id) }) {
+                FolderCover(folder, wallpapers, Modifier.matchParentSize())
+            }
+        }
+    }
+}
+
+@Composable
+private fun PickerItem(selected: Boolean, onClick: () -> Unit, content: @Composable BoxScope.() -> Unit) {
+    val shape = RoundedCornerShape(12.dp)
+    Box(
+        modifier = Modifier
+            .size(width = 90.dp, height = 160.dp)
+            .clip(shape)
+            .then(
+                if (selected) Modifier.border(BorderStroke(3.dp, MaterialTheme.colorScheme.primary), shape) else Modifier,
+            )
+            .clickable(onClick = onClick),
+    ) {
+        content()
+        if (selected) {
+            Icon(
+                Icons.Default.CheckCircle,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.align(Alignment.TopEnd).padding(6.dp),
+            )
         }
     }
 }

@@ -3,6 +3,7 @@ package com.keleveni.wallpaperscheduler
 import android.app.Application
 import android.content.Context
 import com.keleveni.wallpaperscheduler.data.AppDatabase
+import com.keleveni.wallpaperscheduler.data.FolderRepository
 import com.keleveni.wallpaperscheduler.data.ScheduleRepository
 import com.keleveni.wallpaperscheduler.data.SettingsRepository
 import com.keleveni.wallpaperscheduler.data.WallpaperRepository
@@ -30,6 +31,7 @@ class AppContainer(context: Context) {
     val settings = SettingsRepository(context)
     val schedules = ScheduleRepository(database.scheduleDao())
     val wallpapers = WallpaperRepository(context, database.wallpaperDao(), database.scheduleDao())
-    val applier = WallpaperApplier(context, wallpapers)
-    val scheduler = WallpaperScheduler(context, schedules, wallpapers, settings, applier)
+    val folders = FolderRepository(database.folderDao(), database.scheduleDao())
+    val applier = WallpaperApplier(context, wallpapers, settings)
+    val scheduler = WallpaperScheduler(context, schedules, wallpapers, folders, settings, applier)
 }

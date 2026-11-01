@@ -7,6 +7,7 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.keleveni.wallpaperscheduler.AppContainer
+import com.keleveni.wallpaperscheduler.data.Folder
 import com.keleveni.wallpaperscheduler.data.ScheduleEntity
 import com.keleveni.wallpaperscheduler.data.WallpaperEntity
 import com.keleveni.wallpaperscheduler.data.WallpaperTarget
@@ -26,10 +27,14 @@ data class ScheduleForm(
     val hour: Int,
     val minute: Int,
     val wallpaperId: Long?,
+    val folderId: Long?,
+    /** true の場合はフォルダーからランダムに選ぶ。 */
+    val useFolder: Boolean,
     val target: WallpaperTarget,
     val enabled: Boolean,
 ) {
     val isNew: Boolean get() = id == 0L
+    val canSave: Boolean get() = if (useFolder) folderId != null else wallpaperId != null
 }
 
 class ScheduleEditViewModel(
@@ -39,6 +44,9 @@ class ScheduleEditViewModel(
     private val scheduleId: Long = savedStateHandle[ARG_SCHEDULE_ID] ?: NEW_SCHEDULE_ID
 
     val wallpapers: StateFlow<List<WallpaperEntity>> = container.wallpapers.wallpapers
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
+    val folders: StateFlow<List<Folder>> = container.folders.folders
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
     private val _form = MutableStateFlow<ScheduleForm?>(null)
@@ -55,6 +63,8 @@ class ScheduleEditViewModel(
                     hour = existing.hour,
                     minute = existing.minute,
                     wallpaperId = existing.wallpaperId,
+                    folderId = existing.folderId,
+                    useFolder = existing.folderId != null,
                     target = existing.target,
                     enabled = existing.enabled,
                 )
@@ -64,6 +74,8 @@ class ScheduleEditViewModel(
                     hour = LocalTime.now().hour,
                     minute = 0,
                     wallpaperId = container.wallpapers.wallpapers.first().firstOrNull()?.id,
+                    folderId = container.folders.folders.first().firstOrNull()?.id,
+                    useFolder = false,
                     target = WallpaperTarget.BOTH,
                     enabled = true,
                 )
@@ -73,6 +85,10 @@ class ScheduleEditViewModel(
 
     fun selectWallpaper(id: Long) = _form.update { it?.copy(wallpaperId = id) }
 
+    fun selectFolder(id: Long) = _form.update { it?.copy(folderId = id) }
+
+    fun setUseFolder(useFolder: Boolean) = _form.update { it?.copy(useFolder = useFolder) }
+
     fun selectTarget(target: WallpaperTarget) = _form.update { it?.copy(target = target) }
 
     fun setEnabled(enabled: Boolean) = _form.update { it?.copy(enabled = enabled) }
@@ -80,12 +96,13 @@ class ScheduleEditViewModel(
     /** 保存できた場合 true。画面を閉じても処理が中断されないようアプリのスコープで実行する。 */
     fun save(hour: Int, minute: Int): Boolean {
         val form = _form.value ?: return false
-        val wallpaperId = form.wallpaperId ?: return false
+        if (!form.canSave) return false
         val schedule = ScheduleEntity(
             id = form.id,
             hour = hour,
             minute = minute,
-            wallpaperId = wallpaperId,
+            wallpaperId = form.wallpaperId.takeUnless { form.useFolder },
+            folderId = form.folderId.takeIf { form.useFolder },
             target = form.target,
             enabled = form.enabled,
         )

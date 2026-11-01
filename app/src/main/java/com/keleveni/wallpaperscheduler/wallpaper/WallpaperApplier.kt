@@ -3,6 +3,7 @@ package com.keleveni.wallpaperscheduler.wallpaper
 import android.app.WallpaperManager
 import android.content.Context
 import android.util.Log
+import com.keleveni.wallpaperscheduler.data.SettingsRepository
 import com.keleveni.wallpaperscheduler.data.WallpaperEntity
 import com.keleveni.wallpaperscheduler.data.WallpaperRepository
 import kotlinx.coroutines.Dispatchers
@@ -12,6 +13,7 @@ import kotlinx.coroutines.withContext
 class WallpaperApplier(
     context: Context,
     private val repository: WallpaperRepository,
+    private val settings: SettingsRepository,
 ) {
     private val manager = WallpaperManager.getInstance(context)
 
@@ -33,9 +35,26 @@ class WallpaperApplier(
         homeResult && lockResult
     }
 
-    private fun set(wallpaper: WallpaperEntity, which: Int): Boolean = try {
+    private suspend fun set(wallpaper: WallpaperEntity, which: Int): Boolean = try {
         check(isWallpaperChangeAllowed) { "Wallpaper change is not allowed on this device" }
-        repository.fileOf(wallpaper).inputStream().use { manager.setStream(it, null, true, which) }
+        val file = repository.fileOf(wallpaper)
+        val crop = wallpaper.crop
+        if (crop == null) {
+            file.inputStream().use { manager.setStream(it, null, true, which) }
+        } else {
+            // 表示範囲が指定されている場合は、その範囲だけを切り出して設定する
+            val bitmap = CroppedBitmapDecoder.decode(file, crop)
+            try {
+                manager.setBitmap(bitmap, null, true, which)
+            } finally {
+                bitmap.recycle()
+            }
+        }
+        settings.recordApplied(
+            wallpaper.id,
+            home = (which and WallpaperManager.FLAG_SYSTEM) != 0,
+            lock = (which and WallpaperManager.FLAG_LOCK) != 0,
+        )
         true
     } catch (e: Exception) {
         Log.w(TAG, "Failed to set wallpaper ${wallpaper.id} (which=$which)", e)

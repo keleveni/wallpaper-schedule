@@ -17,6 +17,9 @@
     <string name="action_apply">適用</string>
     <string name="action_back">戻る</string>
     <string name="action_open_settings">設定を開く</string>
+    <string name="action_reset">リセット</string>
+    <string name="action_adjust_crop">表示範囲</string>
+    <string name="action_more">その他</string>
 
     <!-- スケジュール一覧 -->
     <string name="schedules_title">スケジュール</string>
@@ -30,6 +33,7 @@
     <string name="schedules_exact_alarm_missing">「アラームとリマインダー」が許可されていないため、変更が指定時刻から遅れる場合があります</string>
     <string name="schedules_delete_title">スケジュールを削除</string>
     <string name="schedules_delete_message">%1$s のスケジュールを削除しますか？</string>
+    <string name="schedules_folder_random">「%1$s」からランダム</string>
     <string name="schedules_add_need_wallpaper">先に「壁紙」タブで画像を登録してください</string>
 
     <!-- スケジュール編集 -->
@@ -41,6 +45,10 @@
     <string name="schedule_edit_enabled">有効</string>
     <string name="schedule_edit_no_wallpapers">壁紙が登録されていません。先に「壁紙」タブで画像を登録してください。</string>
     <string name="schedule_edit_repeat_note">毎日この時刻に壁紙を変更します</string>
+    <string name="schedule_edit_source_wallpaper">壁紙を指定</string>
+    <string name="schedule_edit_source_folder">フォルダーからランダム</string>
+    <string name="schedule_edit_no_folders">フォルダーがありません。先に「壁紙」タブでフォルダーを作成してください。</string>
+    <string name="schedule_edit_folder_note">変更時刻になるたびに、フォルダー内の壁紙からランダムに 1 枚選びます（直前と同じ壁紙は避けます）</string>
 
     <!-- 壁紙一覧 -->
     <string name="wallpapers_title">壁紙</string>
@@ -52,6 +60,23 @@
     <string name="wallpapers_apply_title">壁紙を適用</string>
     <string name="wallpapers_applied">壁紙を適用しました</string>
     <string name="wallpapers_apply_failed">壁紙の適用に失敗しました</string>
+
+    <!-- フォルダー -->
+    <string name="folder_all">すべて</string>
+    <string name="folder_chip">%1$s（%2$d）</string>
+    <string name="folder_count">%1$d 枚</string>
+    <string name="folder_create">新しいフォルダー</string>
+    <string name="folder_rename">名前を変更</string>
+    <string name="folder_name">フォルダー名</string>
+    <string name="folder_delete">フォルダーを削除</string>
+    <string name="folder_delete_message">フォルダー「%1$s」を削除しますか？\n中の壁紙は削除されません。</string>
+    <string name="folder_delete_message_with_schedules">フォルダー「%1$s」を削除しますか？\n中の壁紙は削除されませんが、このフォルダーを使用している %2$d 件のスケジュールは削除されます。</string>
+    <string name="folder_select_wallpapers">壁紙を選択</string>
+    <string name="folder_empty">このフォルダーには壁紙がありません。\n右上のボタンで登録済みの壁紙を選ぶか、右下の＋ボタンから端末内の画像を追加してください。</string>
+
+    <!-- 表示範囲 -->
+    <string name="crop_title">表示範囲を調整</string>
+    <string name="crop_hint">ピンチで拡大・縮小、ドラッグで移動します。枠の中が壁紙として表示されます。</string>
 
     <!-- 設定 -->
     <string name="settings_title">設定</string>

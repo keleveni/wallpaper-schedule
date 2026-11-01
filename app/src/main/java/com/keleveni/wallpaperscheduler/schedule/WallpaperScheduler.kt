@@ -6,10 +6,13 @@ import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.util.Log
+import com.keleveni.wallpaperscheduler.data.FolderRepository
 import com.keleveni.wallpaperscheduler.data.ScheduleEntity
 import com.keleveni.wallpaperscheduler.data.ScheduleRepository
 import com.keleveni.wallpaperscheduler.data.SettingsRepository
+import com.keleveni.wallpaperscheduler.data.WallpaperEntity
 import com.keleveni.wallpaperscheduler.data.WallpaperRepository
+import com.keleveni.wallpaperscheduler.data.WallpaperSource
 import com.keleveni.wallpaperscheduler.wallpaper.WallpaperApplier
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -23,6 +26,7 @@ class WallpaperScheduler(
     private val context: Context,
     private val schedules: ScheduleRepository,
     private val wallpapers: WallpaperRepository,
+    private val folders: FolderRepository,
     private val settings: SettingsRepository,
     private val applier: WallpaperApplier,
 ) {
@@ -46,7 +50,7 @@ class WallpaperScheduler(
         }
         scheduleNext(all)
         if (restoreCurrent) {
-            apply(ScheduleCalculator.activeAt(all, ZonedDateTime.now().minuteOfDay()))
+            apply(ScheduleCalculator.activeAt(all, ZonedDateTime.now().minuteOfDay()), keepCurrent = true)
         }
     }
 
@@ -60,14 +64,39 @@ class WallpaperScheduler(
         // 壁紙の変更に失敗しても以降のスケジュールに影響しないよう、先に次回のアラームを設定する
         scheduleNext(all)
         val now = ZonedDateTime.now().minuteOfDay()
-        apply(ScheduleCalculator.dueBetween(all, triggerMinuteOfDay, now))
+        apply(ScheduleCalculator.dueBetween(all, triggerMinuteOfDay, now), keepCurrent = false)
     }
 
-    private suspend fun apply(assignment: WallpaperAssignment) {
+    /**
+     * @param keepCurrent true の場合、フォルダー指定で現在の壁紙がすでにそのフォルダー内のものなら選び直さない。
+     *   再起動や時刻変更のたびに壁紙が変わらないようにするため
+     */
+    private suspend fun apply(assignment: WallpaperAssignment, keepCurrent: Boolean) {
         if (assignment.isEmpty) return
-        val home = assignment.homeWallpaperId?.let { wallpapers.get(it) }
-        val lock = assignment.lockWallpaperId?.let { wallpapers.get(it) }
-        applier.apply(home, lock)
+        val last = settings.lastApplied()
+        if (assignment.home == assignment.lock) {
+            // 両方に同じ指定の場合は、フォルダーからでも同じ壁紙を両方に設定する
+            val wallpaper = resolve(assignment.home!!, listOfNotNull(last.home, last.lock), keepCurrent)
+            applier.apply(wallpaper, wallpaper)
+        } else {
+            applier.apply(
+                home = assignment.home?.let { resolve(it, listOfNotNull(last.home), keepCurrent) },
+                lock = assignment.lock?.let { resolve(it, listOfNotNull(last.lock), keepCurrent) },
+            )
+        }
+    }
+
+    /** [source] から適用する壁紙を決める。null の場合は変更しない。[current] は現在設定されている壁紙の ID。 */
+    private suspend fun resolve(source: WallpaperSource, current: List<Long>, keepCurrent: Boolean): WallpaperEntity? {
+        val id = when (source) {
+            is WallpaperSource.Single -> source.wallpaperId
+            is WallpaperSource.Folder -> {
+                val members = folders.wallpaperIds(source.folderId)
+                if (keepCurrent && current.isNotEmpty() && members.containsAll(current)) return null
+                RandomWallpaperPicker.pick(members, current) ?: return null
+            }
+        }
+        return wallpapers.get(id)
     }
 
     private fun scheduleNext(all: List<ScheduleEntity>) {

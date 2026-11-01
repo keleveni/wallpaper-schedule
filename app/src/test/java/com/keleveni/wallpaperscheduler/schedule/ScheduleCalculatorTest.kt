@@ -1,6 +1,7 @@
 package com.keleveni.wallpaperscheduler.schedule
 
 import com.keleveni.wallpaperscheduler.data.ScheduleEntity
+import com.keleveni.wallpaperscheduler.data.WallpaperSource
 import com.keleveni.wallpaperscheduler.data.WallpaperTarget
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -20,6 +21,9 @@ class ScheduleCalculatorTest {
         target: WallpaperTarget = WallpaperTarget.BOTH,
         enabled: Boolean = true,
     ) = ScheduleEntity(id, hour, minute, wallpaperId, target, enabled)
+
+    private fun single(home: Long?, lock: Long?) =
+        WallpaperAssignment(home?.let(WallpaperSource::Single), lock?.let(WallpaperSource::Single))
 
     private fun at(hour: Int, minute: Int, second: Int = 0, zone: ZoneId = tokyo) =
         ZonedDateTime.of(2026, 10, 22, hour, minute, second, 0, zone)
@@ -75,14 +79,14 @@ class ScheduleCalculatorTest {
     @Test
     fun activeAt_returnsMostRecentScheduleBeforeNow() {
         val schedules = listOf(schedule(1, 7, 0), schedule(2, 12, 0), schedule(3, 19, 0))
-        assertEquals(WallpaperAssignment(20, 20), ScheduleCalculator.activeAt(schedules, 15 * 60))
-        assertEquals(WallpaperAssignment(20, 20), ScheduleCalculator.activeAt(schedules, 12 * 60))
+        assertEquals(single(20, 20), ScheduleCalculator.activeAt(schedules, 15 * 60))
+        assertEquals(single(20, 20), ScheduleCalculator.activeAt(schedules, 12 * 60))
     }
 
     @Test
     fun activeAt_wrapsToPreviousDay() {
         val schedules = listOf(schedule(1, 7, 0), schedule(2, 19, 0))
-        assertEquals(WallpaperAssignment(20, 20), ScheduleCalculator.activeAt(schedules, 3 * 60))
+        assertEquals(single(20, 20), ScheduleCalculator.activeAt(schedules, 3 * 60))
     }
 
     @Test
@@ -92,8 +96,8 @@ class ScheduleCalculatorTest {
             schedule(2, 8, 0, wallpaperId = 200, target = WallpaperTarget.LOCK),
             schedule(3, 6, 0, wallpaperId = 300, target = WallpaperTarget.BOTH),
         )
-        assertEquals(WallpaperAssignment(100, 200), ScheduleCalculator.activeAt(schedules, 9 * 60))
-        assertEquals(WallpaperAssignment(100, 300), ScheduleCalculator.activeAt(schedules, 7 * 60 + 30))
+        assertEquals(single(100, 200), ScheduleCalculator.activeAt(schedules, 9 * 60))
+        assertEquals(single(100, 300), ScheduleCalculator.activeAt(schedules, 7 * 60 + 30))
     }
 
     @Test
@@ -102,7 +106,7 @@ class ScheduleCalculatorTest {
             schedule(1, 7, 0, wallpaperId = 100),
             schedule(2, 7, 0, wallpaperId = 200),
         )
-        assertEquals(WallpaperAssignment(200, 200), ScheduleCalculator.activeAt(schedules, 8 * 60))
+        assertEquals(single(200, 200), ScheduleCalculator.activeAt(schedules, 8 * 60))
     }
 
     @Test
@@ -118,7 +122,7 @@ class ScheduleCalculatorTest {
             schedule(2, 12, 0, wallpaperId = 200, target = WallpaperTarget.LOCK),
         )
         // 12:00 のアラームが時間通りに実行された場合、ホーム画面は変更しない
-        assertEquals(WallpaperAssignment(null, 200), ScheduleCalculator.dueBetween(schedules, 12 * 60, 12 * 60))
+        assertEquals(single(null, 200), ScheduleCalculator.dueBetween(schedules, 12 * 60, 12 * 60))
     }
 
     @Test
@@ -128,12 +132,24 @@ class ScheduleCalculatorTest {
             schedule(2, 7, 10, wallpaperId = 200, target = WallpaperTarget.HOME),
         )
         // 7:00 のアラームが 7:15 まで遅延した場合、7:10 の予定も反映する
-        assertEquals(WallpaperAssignment(200, 100), ScheduleCalculator.dueBetween(schedules, 7 * 60, 7 * 60 + 15))
+        assertEquals(single(200, 100), ScheduleCalculator.dueBetween(schedules, 7 * 60, 7 * 60 + 15))
     }
 
     @Test
     fun dueBetween_windowCanCrossMidnight() {
         val schedules = listOf(schedule(1, 23, 59, wallpaperId = 100), schedule(2, 0, 5, wallpaperId = 200))
-        assertEquals(WallpaperAssignment(200, 200), ScheduleCalculator.dueBetween(schedules, 23 * 60 + 59, 10))
+        assertEquals(single(200, 200), ScheduleCalculator.dueBetween(schedules, 23 * 60 + 59, 10))
+    }
+
+    @Test
+    fun activeAt_returnsFolderSourceForFolderSchedules() {
+        val schedules = listOf(
+            schedule(1, 7, 0, wallpaperId = 100),
+            ScheduleEntity(2, 12, 0, wallpaperId = null, target = WallpaperTarget.LOCK, folderId = 5),
+        )
+        assertEquals(
+            WallpaperAssignment(WallpaperSource.Single(100), WallpaperSource.Folder(5)),
+            ScheduleCalculator.activeAt(schedules, 13 * 60),
+        )
     }
 }

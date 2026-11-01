@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Crop
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Wallpaper
 import androidx.compose.material3.AlertDialog
@@ -18,6 +19,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
@@ -48,6 +50,7 @@ import com.keleveni.wallpaperscheduler.ui.components.WallpaperImage
 fun WallpaperPreviewScreen(
     wallpaperId: Long,
     onClose: () -> Unit,
+    onAdjustCrop: () -> Unit,
     viewModel: WallpaperListViewModel = viewModel(factory = WallpaperListViewModel.Factory),
 ) {
     val wallpapers by viewModel.wallpapers.collectAsStateWithLifecycle()
@@ -100,13 +103,19 @@ fun WallpaperPreviewScreen(
             ) {
                 Text(stringResource(R.string.wallpapers_apply_title), style = MaterialTheme.typography.titleMedium)
                 TargetSelector(selected = target, onSelect = { target = it }, modifier = Modifier.fillMaxWidth())
-                Button(
-                    onClick = { wallpaper?.let { viewModel.apply(it, target) } },
-                    enabled = wallpaper != null && !applying,
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    Icon(Icons.Default.Wallpaper, contentDescription = null, modifier = Modifier.padding(end = 8.dp))
-                    Text(stringResource(R.string.action_apply))
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedButton(onClick = onAdjustCrop, enabled = wallpaper != null, modifier = Modifier.weight(1f)) {
+                        Icon(Icons.Default.Crop, contentDescription = null, modifier = Modifier.padding(end = 8.dp))
+                        Text(stringResource(R.string.action_adjust_crop))
+                    }
+                    Button(
+                        onClick = { wallpaper?.let { viewModel.apply(it, target) } },
+                        enabled = wallpaper != null && !applying,
+                        modifier = Modifier.weight(1f),
+                    ) {
+                        Icon(Icons.Default.Wallpaper, contentDescription = null, modifier = Modifier.padding(end = 8.dp))
+                        Text(stringResource(R.string.action_apply))
+                    }
                 }
             }
         }

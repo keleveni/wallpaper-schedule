@@ -38,6 +38,11 @@ class WallpaperRepository(
         }
     }
 
+    /** 壁紙として表示する範囲を保存する。null で OS の既定（中央基準）に戻す。 */
+    suspend fun setCrop(wallpaper: WallpaperEntity, crop: CropRect?) {
+        dao.update(wallpaper.copy(crop = crop))
+    }
+
     suspend fun countSchedulesUsing(wallpaper: WallpaperEntity): Int =
         scheduleDao.countByWallpaper(wallpaper.id)
 

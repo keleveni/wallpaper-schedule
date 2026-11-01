@@ -47,12 +47,14 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.keleveni.wallpaperscheduler.R
 import com.keleveni.wallpaperscheduler.data.ScheduleEntity
+import com.keleveni.wallpaperscheduler.ui.components.FolderCover
 import com.keleveni.wallpaperscheduler.ui.components.WallpaperImage
 import com.keleveni.wallpaperscheduler.ui.components.formatTime
 import com.keleveni.wallpaperscheduler.ui.components.label
@@ -194,10 +196,12 @@ private fun ScheduleRow(
     val schedule = item.schedule
     Card(modifier = Modifier.fillMaxWidth().clickable(onClick = onClick)) {
         Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-            WallpaperImage(
-                wallpaper = item.wallpaper,
-                modifier = Modifier.size(width = 48.dp, height = 80.dp).clip(RoundedCornerShape(8.dp)),
-            )
+            val thumbnail = Modifier.size(width = 48.dp, height = 80.dp).clip(RoundedCornerShape(8.dp))
+            if (item.folder != null) {
+                FolderCover(item.folder, item.wallpapers, thumbnail, showLabel = false)
+            } else {
+                WallpaperImage(wallpaper = item.wallpaper, modifier = thumbnail)
+            }
             Spacer(Modifier.width(16.dp))
             Column(Modifier.weight(1f)) {
                 val contentColor = if (schedule.enabled) {
@@ -215,6 +219,15 @@ private fun ScheduleRow(
                     style = MaterialTheme.typography.bodyMedium,
                     color = contentColor,
                 )
+                if (item.folder != null) {
+                    Text(
+                        stringResource(R.string.schedules_folder_random, item.folder.name),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = contentColor,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
             }
             IconButton(onClick = onDelete) {
                 Icon(Icons.Default.Delete, contentDescription = stringResource(R.string.action_delete))

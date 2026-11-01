@@ -1,15 +1,16 @@
 package com.keleveni.wallpaperscheduler.schedule
 
 import com.keleveni.wallpaperscheduler.data.ScheduleEntity
+import com.keleveni.wallpaperscheduler.data.WallpaperSource
 import com.keleveni.wallpaperscheduler.data.WallpaperTarget
 import java.time.LocalTime
 import java.time.ZonedDateTime
 
 private const val MINUTES_PER_DAY = 24 * 60
 
-/** ホーム画面・ロック画面それぞれに適用すべき壁紙 ID。null は変更しないことを表す。 */
-data class WallpaperAssignment(val homeWallpaperId: Long?, val lockWallpaperId: Long?) {
-    val isEmpty: Boolean get() = homeWallpaperId == null && lockWallpaperId == null
+/** ホーム画面・ロック画面それぞれに適用すべき壁紙の指定。null は変更しないことを表す。 */
+data class WallpaperAssignment(val home: WallpaperSource?, val lock: WallpaperSource?) {
+    val isEmpty: Boolean get() = home == null && lock == null
 }
 
 /** スケジュールから次回の実行時刻や適用すべき壁紙を求める。Android に依存しない純粋なロジック。 */
@@ -51,10 +52,10 @@ object ScheduleCalculator {
         // 時刻が [at] に近いものを優先し、同時刻なら後から登録したものを優先する
         val order = compareBy<ScheduleEntity> { (at - it.minuteOfDay).mod(MINUTES_PER_DAY) }.thenByDescending { it.id }
         fun pick(covers: (WallpaperTarget) -> Boolean) =
-            candidates.filter { covers(it.target) }.minWithOrNull(order)?.wallpaperId
+            candidates.filter { covers(it.target) }.minWithOrNull(order)?.source
         return WallpaperAssignment(
-            homeWallpaperId = pick { it.home },
-            lockWallpaperId = pick { it.lock },
+            home = pick { it.home },
+            lock = pick { it.lock },
         )
     }
 }

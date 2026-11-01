@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.keleveni.wallpaperscheduler.AppContainer
+import com.keleveni.wallpaperscheduler.data.Folder
 import com.keleveni.wallpaperscheduler.data.ScheduleEntity
 import com.keleveni.wallpaperscheduler.data.WallpaperEntity
 import com.keleveni.wallpaperscheduler.schedule.ScheduleCalculator
@@ -19,7 +20,13 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.time.ZonedDateTime
 
-data class ScheduleItem(val schedule: ScheduleEntity, val wallpaper: WallpaperEntity?)
+/** [folder] はフォルダー指定のスケジュールの場合のみ。[wallpapers] は表紙の表示に使う。 */
+data class ScheduleItem(
+    val schedule: ScheduleEntity,
+    val wallpaper: WallpaperEntity?,
+    val folder: Folder?,
+    val wallpapers: List<WallpaperEntity>,
+)
 
 data class ScheduleListUiState(
     val items: List<ScheduleItem> = emptyList(),
@@ -41,17 +48,28 @@ class ScheduleListViewModel(private val container: AppContainer) : ViewModel() {
         }
     }
 
-    val uiState: StateFlow<ScheduleListUiState> = combine(
+    private val items = combine(
         container.schedules.schedules,
         container.wallpapers.wallpapers,
+        container.folders.folders,
+    ) { schedules, wallpapers, folders ->
+        val wallpaperById = wallpapers.associateBy { it.id }
+        val folderById = folders.associateBy { it.id }
+        val items = schedules.map {
+            ScheduleItem(it, wallpaperById[it.wallpaperId], folderById[it.folderId], wallpapers)
+        }
+        Triple(schedules, items, wallpapers.isNotEmpty())
+    }
+
+    val uiState: StateFlow<ScheduleListUiState> = combine(
+        items,
         container.settings.autoChangeEnabled,
         canScheduleExact,
         clock,
-    ) { schedules, wallpapers, autoEnabled, canExact, now ->
-        val byId = wallpapers.associateBy { it.id }
+    ) { (schedules, items, hasWallpapers), autoEnabled, canExact, now ->
         ScheduleListUiState(
-            items = schedules.map { ScheduleItem(it, byId[it.wallpaperId]) },
-            hasWallpapers = wallpapers.isNotEmpty(),
+            items = items,
+            hasWallpapers = hasWallpapers,
             nextChange = if (autoEnabled) ScheduleCalculator.nextTrigger(schedules, now)?.time else null,
             autoChangeEnabled = autoEnabled,
             canScheduleExactAlarms = canExact,
